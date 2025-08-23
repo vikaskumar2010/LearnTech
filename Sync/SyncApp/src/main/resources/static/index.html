@@ -8,6 +8,13 @@
 <body>
 <h2>WebSocket Chat</h2>
 
+<button onclick="connectToSync()">Connect</button>
+<br/><br/><br/><br/>
+
+<input type="text" id="action" placeholder="Action">
+<button onclick="sendAction()">Hit</button>
+<br/><br/><br/><br/>
+
 <input type="text" id="from" placeholder="Your name">
 <input type="text" id="message" placeholder="Message">
 <button onclick="sendMessage()">Send</button>
@@ -15,24 +22,35 @@
 <ul id="messages"></ul>
 
 <script>
-    var socket = new SockJS('/chat'); // WebSocket endpoint
-    var stompClient = Stomp.over(socket);
+    
+    var stompClient;
 
-    stompClient.connect({}, function (frame) {
-        console.log('Connected: ' + frame);
-        stompClient.subscribe('/topic/messages', function (msg) {
-            var message = JSON.parse(msg.body);
-            var li = document.createElement("li");
-            li.appendChild(document.createTextNode(message.from + ": " + message.text));
-            document.getElementById("messages").appendChild(li);
+    
+    function connectToSync(){
+    	console.log('Trying to connect');
+    	var socket = new SockJS('/chat'); // WebSocket endpoint
+        stompClient = Stomp.over(socket);
+    	stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/topic/messages', function (msg) {
+                var message = JSON.parse(msg.body);
+                var li = document.createElement("li");
+                li.appendChild(document.createTextNode(message.from + ": " + message.text));
+                document.getElementById("messages").appendChild(li);
+            });
         });
-    });
+    }
 
     function sendMessage() {
         var from = document.getElementById("from").value;
         var text = document.getElementById("message").value;
         stompClient.send("/app/sendMessage", {}, JSON.stringify({'from': from, 'text': text}));
         document.getElementById("message").value = '';
+    }
+    
+    function sendAction() {
+        var action = document.getElementById("action").value;
+        stompClient.send("/app/sendMessage", {}, JSON.stringify({'action': action}));
     }
 </script>
 </body>
